@@ -1,0 +1,2 @@
+Self explanitory, but this is where the flash emulator webpage and flash game (.swf) will be stored.
+Makes use of Ruffle and JS extensively.
