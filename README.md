@@ -32,7 +32,11 @@ A Reinforcement learning environment to teach a model how to play a modified ver
 
 
 ## Credits
-### Programming :computer: 
+### Environment & Reinforcement Model Code
+- Elijah Morgan
+- Preston Thomas
+
+### Game Code :computer: 
 - Dave
 ### Sprites
 - Dave
