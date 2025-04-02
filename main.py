@@ -3,6 +3,7 @@ import socket
 import threading
 import os
 import json
+import subprocess
 
 class GameInfo:
     def __init__(self):
@@ -92,8 +93,17 @@ if __name__ == "__main__":
 
     # Check if the game file exists
     if not checkForGame():
-        print("Game file not found. Please ensure you built the game first.")
-        exit(1)
+        print("Game file not found. Attempting build...")
+        # Attempt to build the game file and save it to the /game directory
+        try:
+            subprocess.run(["bash", "./game/build.sh", "-o", "./game/SickleDodge.love"], check=True)
+            print("Game build successful and saved to /game directory.")
+        except subprocess.CalledProcessError as e:
+            print(f"Game build failed with error: {e}")
+    else:
+        print("Game file found. Proceeding...")
+        # Start the game process
+        subprocess.Popen(["love", "./game/SickleDodge.love"], shell=True)
 
     # Check if CUDA is available and set device accordingly
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
