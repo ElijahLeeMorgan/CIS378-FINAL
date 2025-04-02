@@ -1,0 +1,2 @@
+"working_dir": "${project_path:${folder:${file_path}}}",
+"shell_cmd": "love ."

@@ -1,3 +1,0 @@
-This is where our models, and training code will go.
-
-Delete this later.
