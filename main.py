@@ -2,8 +2,8 @@ import torch
 import socket
 import threading
 import os
-import json
 import subprocess
+import luadata
 
 class GameInfo:
     def __init__(self):
@@ -16,7 +16,13 @@ class GameInfo:
 
         self.timer = 30
 
-        self.sickles = []
+        self.sickles = []           # list[dict[x,y, is_alive]]
+
+    def __str__(self):
+        return (f"Player Position: ({self.playerX}, {self.playerY})\n"
+                f"Player Velocity: ({self.playerVelocityX}, {self.playerVelocityY})\n"
+                f"Timer: {self.timer}\n"
+                f"Number of Sickles: {len(self.sickles)}")
 
     # Start AI Assisted Code
     def estimateVelocity(self, oldX, oldY, newX, newY):
@@ -32,7 +38,14 @@ class GameInfo:
         self.playerVelocityX, self.playerVelocityY = self.estimateVelocity(self.playerX, self.playerY, playerX, playerY)
         self.playerX = playerX
         self.playerY = playerY
+        #TODO: Add player velocity estimation for sickles.
+        # Update the sickles list with new data, may be difficult especially when sickles are added or removed.
         self.sickles = sickles
+
+        #TODO: Add sickle velocity estimation.
+
+        self.timer = timer
+        self.isAlive = is_alive
 
 def listenForData(GINFO: GameInfo, ip:str="127.0.0.1", port:int=12345, buffer_size:int=1024):
     # Create a UDP socket
@@ -46,45 +59,23 @@ def listenForData(GINFO: GameInfo, ip:str="127.0.0.1", port:int=12345, buffer_si
         # Receive data from the socket
         data, addr = sock.recvfrom(buffer_size)
         raw_data = data.decode('utf-8')
+        # Parse the received data into dict with keys ["player"], ["sickles"], ["timer"]
+        gameData = luadata.unserialize(raw_data, encoding="utf-8", multival=False)
 
-        try:
-            # Parse the received data as JSON
-            parsed_data = json.loads(raw_data)
+        GINFO.update(
+            is_alive=gameData['player']['is_alive'],
+            playerX=gameData['player']['x'],
+            playerY=gameData['player']['y'],
+            timer=gameData['timer'],
+            sickles=gameData['sickles']
+        )
 
-            # Extract player information
-            player_info = parsed_data.get("player", {})
-            player_x = player_info.get("x", 0)
-            player_y = player_info.get("y", 0)
-            player_is_alive = player_info.get("is_alive", True)
-
-            # Extract sickles information
-            sickles_info = parsed_data.get("sickles", {})
-            sickles = [
-                {"x": sickle.get("x", 0), "y": sickle.get("y", 0)}
-                for sickle in sickles_info.values()
-            ]
-
-            # Extract timer information
-            timer = parsed_data.get("timer", 0)
-
-            GINFO.update(player_is_alive, player_x, player_y, timer, sickles)
-
-            # Print parsed data for debugging
-            print(f"Player: x={player_x}, y={player_y}, is_alive={player_is_alive}")
-            print(f"Sickles: {sickles}")
-            print(f"Timer: {timer}")
-
-
-
-        except json.JSONDecodeError:
-            print(f"Failed to parse data from {addr}: {raw_data}")
-
-
-def checkForGame() -> bool:
-    return os.path.isfile('./game/SickleDodge.love')
+        print(f"Received data from {addr}:\n{GINFO}")
 
 if __name__ == "__main__":
+    #global g
     g = GameInfo()
+    gamepath = './game/SickleDodge.love'
 
     data_thread = threading.Thread(target=listenForData, args=(g,))
     data_thread.daemon = True  # Ensure the thread exits when the main program exits
@@ -92,20 +83,17 @@ if __name__ == "__main__":
 
 
     # Check if the game file exists
-    if not checkForGame():
-        print("Game file not found. Attempting build...")
-        # Attempt to build the game file and save it to the /game directory
-        try:
-            subprocess.run(["bash", "./game/build.sh", "-o", "./game/SickleDodge.love"], check=True)
-            print("Game build successful and saved to /game directory.")
-        except subprocess.CalledProcessError as e:
-            print(f"Game build failed with error: {e}")
-    else:
+    if os.path.isfile(gamepath):
         print("Game file found. Proceeding...")
-        # Start the game process
-        subprocess.Popen(["love", "./game/SickleDodge.love"], shell=True)
+        # Start the game process with the full path
+        subprocess.run(["love", gamepath])
+    else:
+        print("Game file not found. Please run the build script in the ./game directory.")
+        # I tried to use subprocess to run the build script, but the LOVE2D engine wasn't a fan.
+        exit(1)
+        
 
     # Check if CUDA is available and set device accordingly
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
+    #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    #print(f"Using device: {device}")
 
