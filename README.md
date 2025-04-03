@@ -8,7 +8,7 @@ A Reinforcement learning environment to teach a model how to play a modified ver
 
 ### Setup
 1. Run the build.sh script under the game folder.
-2. Run main.py, wait for training to complete.
+2. Run main.py, wait for training to complete. (WIP)
 3. Run model.
 
 ## Info :dart:
