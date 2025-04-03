@@ -2,6 +2,7 @@ import os
 import pyautogui
 import time
 
+# Start AI Assisted Code
 def focus_window(window_title):
     """Focuses on a window with the given title using wmctrl."""
     try:
@@ -30,6 +31,7 @@ def send_hotkey(window_title, *keys, hold_time=0):
     time.sleep(hold_time)
     for key in reversed(keys):  # Release keys in reverse order
         pyautogui.keyUp(key)
+# End AI Assisted Code
 
 class GameInteraction:
     def __init__(self, window_title):
