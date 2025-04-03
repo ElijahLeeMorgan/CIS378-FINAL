@@ -4,6 +4,7 @@ A Reinforcement learning environment to teach a model how to play a modified ver
 
 ### Requirements
 - Newest version of the LOVE engine: https://love2d.org/#download
+- Install python packages under requirements.txt
 
 ### Setup
 1. Run the build.sh script under the game folder.
