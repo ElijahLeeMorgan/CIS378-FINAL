@@ -1,0 +1,4 @@
+luadata==1.0.5
+torch==2.6.0
+pyrect==0.2.0
+pyautogui==0.9.54

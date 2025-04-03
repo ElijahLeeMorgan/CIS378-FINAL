@@ -1,9 +1,8 @@
-import torch
 import socket
 import threading
-import os
-import subprocess
-import luadata
+from os import path
+from subprocess import run
+from luadata import unserialize
 
 class GameInfo:
     def __init__(self):
@@ -19,13 +18,14 @@ class GameInfo:
         self.sickles = []           # list[dict[x,y, is_alive]]
 
     def __str__(self):
-        return (f"Player Position: ({self.playerX}, {self.playerY})\n"
-                f"Player Velocity: ({self.playerVelocityX}, {self.playerVelocityY})\n"
-                f"Timer: {self.timer}\n"
-                f"Number of Sickles: {len(self.sickles)}")
+        return (f"Player Alive?:\t\t{self.isAlive}\n"
+                f"Player Position:\t({self.playerX}, {self.playerY})\n"
+                f"Player Velocity:\t({self.playerVelocityX}, {self.playerVelocityY})\n"
+                f"Timer:\t\t\t{self.timer}\n"
+                f"Number of Sickles:\t{len(self.sickles)}\n")
 
     # Start AI Assisted Code
-    def estimateVelocity(self, oldX, oldY, newX, newY):
+    def estimateVelocity(self, oldX, oldY, newX, newY) -> tuple[float, float]:
         deltaX = newX - oldX
         deltaY = newY - oldY
 
@@ -34,7 +34,7 @@ class GameInfo:
         velocityY = deltaY / 0.016
         return velocityX, velocityY
     
-    def update(self, is_alive, playerX, playerY, timer, sickles):
+    def update(self, is_alive, playerX, playerY, timer, sickles) -> None:
         self.playerVelocityX, self.playerVelocityY = self.estimateVelocity(self.playerX, self.playerY, playerX, playerY)
         self.playerX = playerX
         self.playerY = playerY
@@ -47,7 +47,7 @@ class GameInfo:
         self.timer = timer
         self.isAlive = is_alive
 
-def listenForData(GINFO: GameInfo, ip:str="127.0.0.1", port:int=12345, buffer_size:int=1024):
+def listenForData(GINFO: GameInfo, ip:str="127.0.0.1", port:int=12345, buffer_size:int=1024) -> None:
     # Create a UDP socket
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -60,7 +60,7 @@ def listenForData(GINFO: GameInfo, ip:str="127.0.0.1", port:int=12345, buffer_si
         data, addr = sock.recvfrom(buffer_size)
         raw_data = data.decode('utf-8')
         # Parse the received data into dict with keys ["player"], ["sickles"], ["timer"]
-        gameData = luadata.unserialize(raw_data, encoding="utf-8", multival=False)
+        gameData = unserialize(raw_data, encoding="utf-8", multival=False)
 
         GINFO.update(
             is_alive=gameData['player']['is_alive'],
@@ -71,6 +71,7 @@ def listenForData(GINFO: GameInfo, ip:str="127.0.0.1", port:int=12345, buffer_si
         )
 
         print(f"Received data from {addr}:\n{GINFO}")
+# End AI Assisted Code
 
 if __name__ == "__main__":
     #global g
@@ -83,10 +84,10 @@ if __name__ == "__main__":
 
 
     # Check if the game file exists
-    if os.path.isfile(gamepath):
+    if path.isfile(gamepath):
         print("Game file found. Proceeding...")
         # Start the game process with the full path
-        subprocess.run(["love", gamepath])
+        run(["love", gamepath])
     else:
         print("Game file not found. Please run the build script in the ./game directory.")
         # I tried to use subprocess to run the build script, but the LOVE2D engine wasn't a fan.
