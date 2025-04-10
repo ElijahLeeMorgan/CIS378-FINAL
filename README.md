@@ -47,9 +47,15 @@ A Reinforcement learning environment to teach a model how to play a modified ver
 ### Music :musical_keyboard:
 - Snowy Cottage 8bit ver 2 by [TAD](https://www.youtube.com/c/Tadon) is licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
 - Iced Village by [TAD](https://www.youtube.com/c/Tadon) is licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
-### Libraries Used
+### Libraries Used (Lua)
 - Love2d [github](https://github.com/love2d/love)
 - Flux [github](https://github.com/rxi/flux)
 - Anim8 [github](https://github.com/kikito/anim8)
 - Lume [github](https://github.com/rxi/lume)
 - Profile.lua [github](https://github.com/2dengine/profile.lua)
+
+### Packages Used (Python3)
+- luadata
+- torch
+- pyrect
+- pyautogui
