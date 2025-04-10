@@ -4,15 +4,29 @@ import time
 
 # Start AI Assisted Code
 def focus_window(window_title):
-    """Focuses on a window with the given title using wmctrl."""
+    """Focuses on a window with the given title using platform-specific tools."""
     try:
-        # Use wmctrl to find and focus the window
-        result = os.popen(f"wmctrl -l | grep '{window_title}'").read()
-        if not result:
-            raise Exception(f"No window found with title: {window_title}")
-        window_id = result.split()[0]
-        os.system(f"wmctrl -i -a {window_id}")
-        time.sleep(0.5)  # Allow time for the window to focus
+        if os.name == 'posix':  # Unix-like systems
+            if os.uname().sysname == 'Darwin':  # macOS
+                # Use AppleScript to focus the window on macOS
+                script = f"""
+                tell application "System Events"
+                    set frontmost of the first process whose name is "{window_title}" to true
+                end tell
+                """
+                result = os.system(f"osascript -e '{script}'")
+                if result != 0:
+                    raise Exception(f"No window found with title: {window_title}")
+            else:  # Linux
+                # Use wmctrl to find and focus the window
+                result = os.popen(f"wmctrl -l | grep '{window_title}'").read()
+                if not result:
+                    raise Exception(f"No window found with title: {window_title}")
+                window_id = result.split()[0]
+                os.system(f"wmctrl -i -a {window_id}")
+                time.sleep(0.5)  # Allow time for the window to focus
+        else:
+            raise Exception("Unsupported operating system")
     except Exception as e:
         raise Exception(f"Error focusing window: {e}")
 
@@ -47,6 +61,7 @@ class GameInteraction:
     def jump(self, holdTime=0.10):
         send_keystroke(self.window_title, 'up', holdTime)
 
+    '''
     def doubleJumpUp(self, holdTime1=0.10, holdTime2=0.10):
         send_keystroke(self.window_title, 'up', holdTime1)
         time.sleep(0.1)
@@ -59,6 +74,7 @@ class GameInteraction:
     def doubleJumpRight(self, holdTime1=0.10, holdTime2=0.10):
         send_hotkey(self.window_title, 'right', 'up', holdTime1)
         send_hotkey(self.window_title, 'right', 'up', holdTime2)
+    '''
 
 # Example usage:
 # Replace 'Sickle Dodge' with the title of your target application window.
