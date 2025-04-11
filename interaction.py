@@ -82,11 +82,10 @@ if __name__ == "__main__":
     time.sleep(2)
     try:
         game = GameInteraction("Sickle Dodge")
-        game.moveLeft()
-        game.moveRight()
-        game.jump()
-        game.doubleJumpUp()
-        game.doubleJumpLeft()
-        game.doubleJumpRight()
+        for i in range(0, 45):
+            game.moveLeft()
+            game.jump()
+            game.moveRight()
+            game.jump()
     except Exception as e:
         print(e)
