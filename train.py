@@ -34,19 +34,19 @@ class trainer(object):
             3: self.interaction.nothing,
         }
         self.actionSize = len(self.actions)
-        self.stateSize = len(self.data.getState()) + 26 # 13 sickles max, 2 values each (x,y). Total of 32 values. #FIXME Find actual max sickles.
+        self.stateSize = len(self.data.getState()) + 16 # 8 sickles max, 2 values each (x,y). Total of 24 values. #FIXME Find actual max sickles.
         self.gameState = self.data.getState()
 
         if model is None:
             print("Model is None, generating new model.")
             self.model = Sequential(
-                Linear(self.data.state_size, 32),
+                Linear(self.data.state_size, 24),
                 ReLU(),
-                Linear(32, 16),
+                Linear(24, 16),
                 ReLU(),
                 Linear(16, 8),
                 ReLU(),
-                Linear(8, self.actionSize),
+                Linear(8, self.actionSize), # Currently 4 actions.
                 Softmax(dim=-1)
             )
         else:
