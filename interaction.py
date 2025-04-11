@@ -60,6 +60,9 @@ class GameInteraction:
     
     def jump(self, holdTime=0.10):
         send_keystroke(self.window_title, 'up', holdTime)
+    
+    def nothing(self, holdTime=0.10):
+        time.sleep(holdTime)
 
     '''
     def doubleJumpUp(self, holdTime1=0.10, holdTime2=0.10):

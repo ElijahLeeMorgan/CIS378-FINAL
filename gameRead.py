@@ -1,5 +1,6 @@
 import socket
 from luadata import unserialize
+from os import path
 
 class GameInfo:
     def __init__(self):
@@ -13,6 +14,8 @@ class GameInfo:
         self.timer = 30
 
         self.sickles = []           # list[dict[x,y, is_alive]]
+
+        self.dataSize = 10 + len(self.sickles) * 2  # 4 for the player position and velocity, 2 for max number of sickles (x,y)
 
     def __str__(self):
         return (f"Player Alive?:\t\t{self.isAlive}\n"
@@ -44,7 +47,14 @@ class GameInfo:
         self.timer = timer
         self.isAlive = is_alive
 
-def listenForData(GINFO: GameInfo, ip:str="127.0.0.1", port:int=12345, buffer_size:int=1024) -> None:
+    def getState(self) -> list[float]:
+        state = [self.isAlive, self.playerX, self.playerY, self.playerVelocityX, self.playerVelocityY, self.timer]
+        for sickle in self.sickles:
+            state.append(sickle['x'])
+            state.append(sickle['y'])
+        return state
+
+def listenForData(GINFO: GameInfo, ip:str="127.0.0.1", port:int=12345, buffer_size:int=1024, saveToFile=False) -> None:
     # Create a UDP socket
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -68,4 +78,15 @@ def listenForData(GINFO: GameInfo, ip:str="127.0.0.1", port:int=12345, buffer_si
         )
 
         print(f"Received data from {addr}:\n{GINFO}")
+
+        # Optionally save the data to a file
+        if saveToFile:
+            # Check if the file exists, if not create it
+            if not path.exists("./game_data.txt"):
+                with open("./game_data.txt", "w") as f:
+                    f.write(f"{GINFO}\n")
+            else:
+                # Append the data to the file
+                with open("./game_data.txt", "a") as f:
+                    f.write(f"{GINFO}\n")
 # End AI Assisted Code
