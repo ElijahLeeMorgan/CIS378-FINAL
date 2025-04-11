@@ -35,7 +35,7 @@ class trainer(object):
         }
         self.actionSize = len(self.actions)
         self.stateSize = len(self.data.getState()) + 26 # 13 sickles max, 2 values each (x,y). Total of 32 values. #FIXME Find actual max sickles.
-        self.gameState = data.getState()
+        self.gameState = self.data.getState()
 
         if model is None:
             print("Model is None, generating new model.")
@@ -53,16 +53,57 @@ class trainer(object):
             if not isinstance(model, torch.nn.Module):
                 raise TypeError("model must be an instance of torch.nn.Module")
             self.model = model
-        
+    
+    def penalize(self, penalty:float):
+        # Placeholder for penalty logic
+        # This could be a negative reward or a loss function adjustment
+        pass
+
+    def reward(self, reward:float):
+        # Placeholder for reward logic
+        # This could be a positive reward or a loss function adjustment
+        pass
 
     def train(self):
-        # Check if the game is over, ad restart if so.
-        if data.isAlive == False:
-            char.jump()  # Restarts the game
-            continue
+        # Check if the game is over, and restart if so.
+        timeAlive = 0
+        lastTimeAlive = 0
+        longestTimeAlive = 0
+        
+        while timeAlive < 30:
+            timeAlive = self.data.getState[5]  # Timer
+            path = "./models/"
 
-        # Wait for the next frame
-        sleep(0.05)
+            if self.data.getState[0] == False: # isAlive?
+
+                if timeAlive > lastTimeAlive:
+                    lastTimeAlive = timeAlive
+                    #TODO Reward the model for last time alive. Seperate function.
+                    #self.reward(timeAlive - lastTimeAlive)
+                    print(f"Time alive: {timeAlive} seconds")
+                else:
+                    ...
+                    #TODO Penalize the model for dying too soon. Seperate function.
+                    #self.penalize(timeAlive - lastTimeAlive)
+                    print(f"Time alive: {timeAlive} seconds")
+
+                if timeAlive > longestTimeAlive:
+                    # Optional, but useful for debugging and seeing trainign progress.
+                    longestTimeAlive = timeAlive
+                    print(f"Longest time alive: {longestTimeAlive} seconds")
+
+                    #TODO Save the model if it is the longest time alive. Handle model saving in a different function.
+                    #self.save_model(path + "model{longestTimeAlive}.pth")
+                    #self.model.save_model("model{longestTimeAlive}.pth")
+                    print(f"Model saved to {path}.")
+                    
+                
+                
+                self.interaction.jump()  # Restarts the game
+                continue
+
+            # Wait for the next frame
+            sleep(0.05)
 
     def save_model(self, path: str):
         # Placeholder for model saving logic
@@ -73,4 +114,5 @@ class trainer(object):
         pass
 
 if __name__ == "__main__":
+    ...
     #training_loop()
