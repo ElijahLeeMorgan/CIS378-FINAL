@@ -9,7 +9,7 @@ import torch.optim as optim
 
 
 class trainer(object):
-    def __init__(self, interaction:GameInteraction=None, data:GameInfo=None, model=None):
+    def __init__(self, interaction:GameInteraction=None, data:GameInfo=None, model:torch.nn.Module=None):
         # Error checking, allows for reusing objects when possible.
 
         # Window interaction Class
@@ -39,6 +39,8 @@ class trainer(object):
         }
         self.actionSize = len(self.actions)
         self.stateSize = len(self.data.getState()) + 16 # 8 sickles max, 2 values each (x,y). Total of 24 values.
+        #TODO Maybe add last action (button pressed) to the state? This would allow for better prediction of the next action.
+        #NOTE If I do this I need to adjust functions that read the self.gameState variable. 
         self.gameState = self.data.getState()
 
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
@@ -119,7 +121,7 @@ class trainer(object):
         longestTimeAlive = 0
         path = "./models/"
 
-        for epoch in range(epochs):
+        for epoch in range(epochs): # Each epoch is one life in the game.
             #for batch in train_loader: # Replace with real-time data fetching
             # Perform forward pass, compute loss, and backpropagation
             self.optimizer.zero_grad()
@@ -127,49 +129,50 @@ class trainer(object):
             #loss.backward()
             self.optimizer.step()
 
+            # Data order:
             #self.isAlive, self.playerX, self.playerY, self.playerVelocityX, self.playerVelocityY, self.timer, SickleX, SkicleY, SickleX2, SicklyY2, ...
             
+            self.interaction.jump()  # Starts the game
+
             self.gameState = self.data.getState()
-            isAlive = self.gameState[0]
             currentTime = self.gameState[1]  # Current time
 
-            if isAlive == False: # isAlive?
-                timeAlive = currentTime
-
-                if timeAlive > longestTimeAlive:
-                    longestTimeAlive = timeAlive
-                    print(f"Longest time alive: {longestTimeAlive} seconds")
-                    # Save model.
-                    torch.save(self.model.state_dict(), path + "model.pth")
-                    print(f"Model saved to {path}.")
-                    #NOTE do not 'contnue' here, we still need to reward the model for time alive.
-
-                if timeAlive > lastTimeAlive:
-                    self.reward((timeAlive - lastTimeAlive) / 30) # Divide by 30 to normalize the reward float.
-                    # Normally, I would max to 30 to prevent accidental penalty, but we know this will only run if timeAlive > lastTimeAlive.
-                    print(f"Time alive: {timeAlive} seconds")
-                else:
-                    self.penalize() # Penalize for dying too soon.
-                    print(f"Time alive: {timeAlive} seconds")
-                lastTimeAlive = timeAlive # Update previous time alive.
-
+            while isAlive: # Player is Alive? Continue until False.
+                isAlive = self.gameState[0]
+                tensorState = torch.tensor(self.gameState, dtype=torch.float32).unsqueeze(0)  # Convert to tensor and add batch dimension
                 
-            
-            self.interaction.jump()  # Restarts the game
 
-            # Wait for the next frame
-            sleep(0.05)
+                #TODO Insert model prediction here.
+                # Perform the action
+                action = self.model(tensorState).argmax().item()  # Get the action with the highest probability according to the model.
+                self.actions[action]()  #FIXME No idea if this will work lol. It should run the returned function from the model.
             
+            timeAlive = currentTime # Time of death.
+            if timeAlive > longestTimeAlive:
+                longestTimeAlive = timeAlive
+                print(f"Longest time alive: {longestTimeAlive} seconds")
+                # Save model.
+                torch.save(self.model.state_dict(), path + "model.pth")
+                print(f"Model saved to {path}.")
+                if timeAlive >= 30:
+                    print("Survived for 30 seconds, stopping training.")
+                    break # If the player survives for 30 seconds, stop training.
+                #NOTE do not 'contnue' here, we still need to reward the model for time alive.
 
+            if timeAlive > lastTimeAlive:
+                self.reward((timeAlive - lastTimeAlive) / 30) # Divide by 30 to normalize the reward float.
+                # Normally, I would max to 30 to prevent accidental penalty, but we know this will only run if timeAlive > lastTimeAlive.
+                print(f"Time alive: {timeAlive} seconds")
+            else:
+                self.penalize() # Penalize for dying too soon.
+                print(f"Time alive: {timeAlive} seconds")
+            lastTimeAlive = timeAlive # Update previous time alive.
             
             # Step the scheduler at the end of each epoch
             self.scheduler.step()
             # Optional: Print the current learning rate
             self.currentLearningRate()
-        
-        
-
-        
+        sleep(1) # Give the game time to restart.
 
     def save_model(self, path: str):
         # Placeholder for model saving logic
