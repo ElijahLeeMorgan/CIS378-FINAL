@@ -38,11 +38,8 @@ class GameInfo:
         self.playerVelocityX, self.playerVelocityY = self.estimateVelocity(self.playerX, self.playerY, playerX, playerY)
         self.playerX = playerX
         self.playerY = playerY
-        #TODO: Add player velocity estimation for sickles.
         # Update the sickles list with new data, may be difficult especially when sickles are added or removed.
         self.sickles = sickles
-
-        #TODO: Add sickle velocity estimation.
 
         self.timer = timer
         self.isAlive = is_alive
