@@ -7,8 +7,8 @@ import torch
 from torch.nn import Sequential, Linear, ReLU, Softmax
 import torch.optim as optim
 
-
-class trainer(object):
+# AI Assited Code
+class Trainer():
     def __init__(self, interaction:GameInteraction=None, data:GameInfo=None, model:torch.nn.Module=None):
         # Error checking, allows for reusing objects when possible.
 
@@ -66,12 +66,12 @@ class trainer(object):
         # Initialize the optimizer
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
 
-    def currentLearningRate(self) -> float:
+    def _currentLearningRate(self) -> float:
         current_lr = self.optimizer.param_groups[0]['lr']
         print(f"Current Learning Rate: {current_lr}")
         return current_lr
 
-    def penalize(self) -> None:
+    def _penalize(self) -> None:
         # Apply a penalty by adjusting the model's loss function
 
         # Generate a dummy target tensor with zeros (penalty scenario)
@@ -93,7 +93,7 @@ class trainer(object):
 
         print("Penalty applied.")
 
-    def reward(self, reward: float) -> None:
+    def _reward(self, reward: float) -> None:
         # Apply a reward by adjusting the model's loss function
         
         # Generate a dummy target tensor with a positive reward
@@ -114,7 +114,7 @@ class trainer(object):
 
         print(f"Reward: {reward}")
 
-    def train(self, epochs: int = 100) -> None:
+    def train(self, epochs: int = 1) -> None:
         # Check if the game is over, and restart if so.
         timeAlive = 0
         lastTimeAlive = 0
@@ -122,6 +122,8 @@ class trainer(object):
         path = "./models/"
 
         for epoch in range(epochs): # Each epoch is one life in the game.
+            print(f"Epoch {epoch + 1}/{epochs}")
+            
             #for batch in train_loader: # Replace with real-time data fetching
             # Perform forward pass, compute loss, and backpropagation
             self.optimizer.zero_grad()
@@ -160,18 +162,18 @@ class trainer(object):
                 #NOTE do not 'contnue' here, we still need to reward the model for time alive.
 
             if timeAlive > lastTimeAlive:
-                self.reward((timeAlive - lastTimeAlive) / 30) # Divide by 30 to normalize the reward float.
+                self._reward((timeAlive - lastTimeAlive) / 30) # Divide by 30 to normalize the reward float.
                 # Normally, I would max to 30 to prevent accidental penalty, but we know this will only run if timeAlive > lastTimeAlive.
                 print(f"Time alive: {timeAlive} seconds")
             else:
-                self.penalize() # Penalize for dying too soon.
+                self._penalize() # Penalize for dying too soon.
                 print(f"Time alive: {timeAlive} seconds")
             lastTimeAlive = timeAlive # Update previous time alive.
             
             # Step the scheduler at the end of each epoch
             self.scheduler.step()
             # Optional: Print the current learning rate
-            self.currentLearningRate()
+            self._currentLearningRate()
         sleep(1) # Give the game time to restart.
 
     def save_model(self, path: str):
