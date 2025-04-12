@@ -10,7 +10,7 @@ import train
 if __name__ == "__main__":
     #global g
     gameReader = gameRead.GameInfo()
-    gameInteractor = interaction.Interaction()
+    gameInteractor = interaction.GameInteraction()
     modelTrainer = train.Trainer(gameInteractor, gameReader, model=None)
     # Set model to a LOADED model if you have one to train/demo.
     #TODO Make a model loader system flag to load a model from a file.
