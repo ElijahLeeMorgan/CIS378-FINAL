@@ -174,7 +174,7 @@ class Trainer():
             self.scheduler.step()
             # Optional: Print the current learning rate
             self._currentLearningRate()
-        sleep(1) # Give the game time to restart.
+        sleep(3) # Give the game time to restart.
 
     def save_model(self, path: str):
         # Placeholder for model saving logic
