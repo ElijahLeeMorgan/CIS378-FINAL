@@ -55,7 +55,6 @@ A Reinforcement learning environment to teach a model how to play a modified ver
 - Profile.lua [github](https://github.com/2dengine/profile.lua)
 
 ### Packages Used (Python3)
-- luadata
-- torch
-- pyrect
-- pyautogui
+- luadata [github](https://github.com/leafvmaple/luadata)
+- torch [github](https://github.com/pytorch/pytorch)
+- pyautogui [github](https://github.com/asweigart/pyautogui)
