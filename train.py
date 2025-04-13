@@ -129,6 +129,10 @@ class Trainer():
                 except ValueError:
                     raise TypeError(f"Data type {type(i)} not supported.")
         '''
+        print("StateSize:", self.stateSize)
+        if len(data) < 26:
+            data = np.vectorize(float)(data)  # Convert to float
+            data = np.pad(data, (0, 26 - len(data)), 'constant', constant_values=0)
         return torch.tensor(data).unsqueeze(0)  # Convert to tensor and add batch dimension
 
     def train(self, epochs: int = 1) -> None:
@@ -161,10 +165,17 @@ class Trainer():
                 isAlive = self.gameState[0]
         
                 tensorState = self._tensorData(self.gameState)  # Convert to tensor and add batch dimension
-                print(f"State: {tensorState}")
+                print(f"State: {tensorState}") #FIXME: This is the last thing that will print. WHY?
                 # Get the current state and predict the action probabilities
                 # Predict and perform the action
+                
+                #FIXME : RuntimeError: mat1 and mat2 shapes cannot be multiplied (1x6 and 22x26)
+                print("Tensor state shape:", tensorState.shape)
+                print("Model input shape:", self.model.input_shape)
+                print("Model output shape:", self.model.output_shape)
+                
                 action = self.model(tensorState).argmax().item()  # Get the action with the highest probability according to the model.
+                
                 self.actions[action]()  #FIXME No idea if this will work lol. It should run the returned function from the model.
                 print(f"Action: {action}")
 
