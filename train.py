@@ -3,6 +3,7 @@ from interaction import GameInteraction
 from gameRead import GameInfo
 from warnings import warn
 import numpy as np
+from os import path, makedirs
 
 import torch
 from torch.nn import Sequential, Linear, ReLU, Softmax
@@ -47,9 +48,7 @@ class Trainer():
         if model is None:
             print("Model is None, generating new model.")
             self.model = Sequential(
-            Linear(self.data.dataSize, 26),
-            ReLU(),
-            Linear(26, 16),
+            Linear(26, 16), #FIXME Hardcoded input size. Should be self.stateSize <- Buggy, doesn't consider when sickles are missing. 
             ReLU(),
             Linear(16, 8),
             ReLU(),
@@ -79,7 +78,7 @@ class Trainer():
         target = target.unsqueeze(0)  # Add batch dimension
         
         # Get the current state and predict the action probabilities
-        state = torch.tensor(self.data.getState(), dtype=torch.float32).unsqueeze(0)
+        state = self._tensorData(self.gameState) #FIXME turn into a object var to save CPU cost.
         predictions = self.model(state)
         
         # Calculate the loss (penalty)
@@ -100,8 +99,7 @@ class Trainer():
         target = torch.full((1, self.actionSize), reward / self.actionSize)
         
         # Get the current state and predict the action probabilities
-        state = torch.tensor(self.data.getState(), dtype=torch.float32).unsqueeze(0)
-        predictions = self.model(state)
+        predictions = self.model(self._tensorData(self.gameState)) #FIXME turn into a object var to save CPU cost.
         
         # Calculate the loss (reward)
         loss_fn = torch.nn.MSELoss()
@@ -133,13 +131,13 @@ class Trainer():
         if len(data) < 26:
             data = np.vectorize(float)(data)  # Convert to float
             data = np.pad(data, (0, 26 - len(data)), 'constant', constant_values=0)
+        data = data.astype(np.float32)  # Ensure all values are signed floats
         return torch.tensor(data).unsqueeze(0)  # Convert to tensor and add batch dimension
 
     def train(self, epochs: int = 1) -> None:
         timeAlive = 0
         lastTimeAlive = 0
         longestTimeAlive = 0
-        path = "./models/"
 
         for epoch in range(epochs): # Each epoch is one life in the game.
             print(f"Epoch {epoch + 1}/{epochs}")
@@ -163,6 +161,8 @@ class Trainer():
                 self.gameState = self.data.getState() # list[float]
                 currentTime = self.gameState[1]  # Current time
                 isAlive = self.gameState[0]
+
+                print(f"Game state: {self.gameState}") # Print the game state for debugging
         
                 tensorState = self._tensorData(self.gameState)  # Convert to tensor and add batch dimension
                 print(f"State: {tensorState}") #FIXME: This is the last thing that will print. WHY?
@@ -171,8 +171,6 @@ class Trainer():
                 
                 #FIXME : RuntimeError: mat1 and mat2 shapes cannot be multiplied (1x6 and 22x26)
                 print("Tensor state shape:", tensorState.shape)
-                print("Model input shape:", self.model.input_shape)
-                print("Model output shape:", self.model.output_shape)
                 
                 action = self.model(tensorState).argmax().item()  # Get the action with the highest probability according to the model.
                 
@@ -184,11 +182,10 @@ class Trainer():
                 longestTimeAlive = timeAlive
                 print(f"Longest time alive: {longestTimeAlive} seconds")
                 # Save model.
-                torch.save(self.model.state_dict(), path + "model.pth")
-                print(f"Model saved to {path}.")
-                if timeAlive >= 30:
-                    print("Survived for 30 seconds, stopping training.")
-                    break # If the player survives for 30 seconds, stop training.
+                self._saveModel()
+                #if timeAlive >= 30: #FIXME Gamestate is updating with values like 145 after 2 seconds.
+                #    print("Survived for 30 seconds, stopping training.")
+                #    break # If the player survives for 30 seconds, stop training.
                 #NOTE do not 'contnue' here, we still need to reward the model for time alive.
 
             if timeAlive > lastTimeAlive:
@@ -205,10 +202,14 @@ class Trainer():
             # Optional: Print the current learning rate
             self._currentLearningRate()
 
-    def save_model(self, path: str):
-        # Placeholder for model saving logic
-        pass
+    def _saveModel(self, filePath:str="./models/"):
+        if not path.exists(filePath):
+            print(f"Creating directory {filePath}...")
+            makedirs(filePath)
+        torch.save(self.model.state_dict(), filePath + "model.pth")
+        print(f"Model saved to {filePath}.")
 
+            
     def load_model(self, path: str):
         # Placeholder for model loading logic
         pass
