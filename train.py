@@ -44,13 +44,10 @@ class Trainer():
         #NOTE If I do this I need to adjust functions that read the self.gameState variable. 
         self.gameState = self.data.getState()
 
-        self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
-        self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=10, gamma=0.1) # Learning rate decay, optional but allows for better training.
-
         if model is None:
             print("Model is None, generating new model.")
             self.model = Sequential(
-            Linear(self.data.state_size, 26),
+            Linear(self.data.dataSize, 26),
             ReLU(),
             Linear(26, 16),
             ReLU(),
@@ -64,8 +61,10 @@ class Trainer():
                 raise TypeError("model must be an instance of torch.nn.Module")
             self.model = model
         
-        # Initialize the optimizer
+        # Initialize the optimizer and learning rate scheduler
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
+        self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=10, gamma=0.1) # Learning rate decay, optional but allows for better training.
+
 
     def _currentLearningRate(self) -> float:
         current_lr = self.optimizer.param_groups[0]['lr']
@@ -115,9 +114,10 @@ class Trainer():
 
         print(f"Reward: {reward}")
 
-    def _preprocessData(self, data: list) -> torch.Tensor:
-        # Start with a NumPy array and dynamically add data
-        arr = np.empty(0, dtype=np.float32)  # Initialize an empty NumPy array
+    def _tensorData(self, data: list) -> torch.Tensor:
+        # Data is alreayd a list of floats, so we can just convert it to a tensor.
+        # I didn't realize this when I wrote the code below.
+        '''
         for i in data:
             if isinstance(i, (list, tuple)):
                 arr = np.append(arr, np.ravel(i))  # Flatten and append
@@ -128,10 +128,10 @@ class Trainer():
                     #NOTE This will work on all but strs, but that shouldn't be a problem.
                 except ValueError:
                     raise TypeError(f"Data type {type(i)} not supported.")
-        return torch.tensor(arr).unsqueeze(0)  # Convert to tensor and add batch dimension
+        '''
+        return torch.tensor(data).unsqueeze(0)  # Convert to tensor and add batch dimension
 
     def train(self, epochs: int = 1) -> None:
-        # Check if the game is over, and restart if so.
         timeAlive = 0
         lastTimeAlive = 0
         longestTimeAlive = 0
@@ -139,6 +139,8 @@ class Trainer():
 
         for epoch in range(epochs): # Each epoch is one life in the game.
             print(f"Epoch {epoch + 1}/{epochs}")
+
+            sleep(3) # Give the game time to restart.
             
             #for batch in train_loader: # Replace with real-time data fetching
             # Perform forward pass, compute loss, and backpropagation
@@ -151,19 +153,21 @@ class Trainer():
             #self.isAlive, self.playerX, self.playerY, self.playerVelocityX, self.playerVelocityY, self.timer, SickleX, SkicleY, SickleX2, SicklyY2, ...
             
             self.interaction.jump()  # Starts the game
-
-            self.gameState = self.data.getState()
-            currentTime = self.gameState[1]  # Current time
+            isAlive = True # Player is alive?
 
             while isAlive: # Player is Alive? Continue until False.
+                self.gameState = self.data.getState() # list[float]
+                currentTime = self.gameState[1]  # Current time
                 isAlive = self.gameState[0]
-                tensorState = self._preprocessData(self.gameState)  # Convert to tensor and add batch dimension
-
-                #TODO Insert model prediction here.
-                # Perform the action
+        
+                tensorState = self._tensorData(self.gameState)  # Convert to tensor and add batch dimension
+                print(f"State: {tensorState}")
+                # Get the current state and predict the action probabilities
+                # Predict and perform the action
                 action = self.model(tensorState).argmax().item()  # Get the action with the highest probability according to the model.
                 self.actions[action]()  #FIXME No idea if this will work lol. It should run the returned function from the model.
-            
+                print(f"Action: {action}")
+
             timeAlive = currentTime # Time of death.
             if timeAlive > longestTimeAlive:
                 longestTimeAlive = timeAlive
@@ -189,7 +193,6 @@ class Trainer():
             self.scheduler.step()
             # Optional: Print the current learning rate
             self._currentLearningRate()
-        sleep(3) # Give the game time to restart.
 
     def save_model(self, path: str):
         # Placeholder for model saving logic

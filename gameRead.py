@@ -13,7 +13,7 @@ class GameInfo:
 
         self.timer = 30
 
-        self.sickles = []           # list[dict[x,y, is_alive]]
+        self.sickles = []           # list[dict[x:float,y:float, is_alive:bool]]
 
         self.dataSize = 10 + len(self.sickles) * 2  # 4 for the player position and velocity, 2 for max number of sickles (x,y)
 
@@ -41,12 +41,16 @@ class GameInfo:
         # Update the sickles list with new data, may be difficult especially when sickles are added or removed.
         self.sickles = sickles
 
+        self.dataSize = 10 + len(self.sickles) * 2  # 4 for the player position and velocity, 2 for max number of sickles (x,y)
+
         self.timer = timer
         self.isAlive = is_alive
 
     def getState(self) -> list[float]:
-        state = [self.isAlive, self.playerX, self.playerY, self.playerVelocityX, self.playerVelocityY, self.timer]
+        state = [float(self.isAlive), self.playerX, self.playerY, self.playerVelocityX, self.playerVelocityY, float(self.timer)]
         for sickle in self.sickles:
+            #NOTE These should alreayd be floats, but just in case.
+            #if sickle['is_alive']: # Skips dead sickles. #FIXME isAlive not appended to data ahead of time. Not worh fixing right now.
             state.append(sickle['x'])
             state.append(sickle['y'])
         return state
@@ -74,7 +78,7 @@ def listenForData(GINFO: GameInfo, ip:str="127.0.0.1", port:int=12345, buffer_si
             sickles=gameData['sickles']
         )
 
-        print(f"Received data from {addr}:\n{GINFO}")
+        #print(f"Received data from {addr}:\n{GINFO}")
 
         # Optionally save the data to a file
         if saveToFile:
