@@ -2,6 +2,7 @@ from time import sleep
 from interaction import GameInteraction
 from gameRead import GameInfo
 from warnings import warn
+import numpy as np
 
 import torch
 from torch.nn import Sequential, Linear, ReLU, Softmax
@@ -38,7 +39,7 @@ class Trainer():
             3: self.interaction.nothing,
         }
         self.actionSize = len(self.actions)
-        self.stateSize = len(self.data.getState()) + 16 # 8 sickles max, 2 values each (x,y). Total of 24 values.
+        self.stateSize = len(self.data.getState()) + 18 # 9 sickles max, 2 values each (x,y). Total of 26 values.
         #TODO Maybe add last action (button pressed) to the state? This would allow for better prediction of the next action.
         #NOTE If I do this I need to adjust functions that read the self.gameState variable. 
         self.gameState = self.data.getState()
@@ -49,9 +50,9 @@ class Trainer():
         if model is None:
             print("Model is None, generating new model.")
             self.model = Sequential(
-            Linear(self.data.state_size, 24),
+            Linear(self.data.state_size, 26),
             ReLU(),
-            Linear(24, 16),
+            Linear(26, 16),
             ReLU(),
             Linear(16, 8),
             ReLU(),
@@ -114,6 +115,21 @@ class Trainer():
 
         print(f"Reward: {reward}")
 
+    def _preprocessData(self, data: list) -> torch.Tensor:
+        # Start with a NumPy array and dynamically add data
+        arr = np.empty(0, dtype=np.float32)  # Initialize an empty NumPy array
+        for i in data:
+            if isinstance(i, (list, tuple)):
+                arr = np.append(arr, np.ravel(i))  # Flatten and append
+                #NOTE No need to expect non-numeric data here, as the game should only send lists of numeric data.
+            else:
+                try:
+                    arr = np.append(arr, float(i))  # Append single value
+                    #NOTE This will work on all but strs, but that shouldn't be a problem.
+                except ValueError:
+                    raise TypeError(f"Data type {type(i)} not supported.")
+        return torch.tensor(arr).unsqueeze(0)  # Convert to tensor and add batch dimension
+
     def train(self, epochs: int = 1) -> None:
         # Check if the game is over, and restart if so.
         timeAlive = 0
@@ -141,8 +157,7 @@ class Trainer():
 
             while isAlive: # Player is Alive? Continue until False.
                 isAlive = self.gameState[0]
-                tensorState = torch.tensor(self.gameState, dtype=torch.float32).unsqueeze(0)  # Convert to tensor and add batch dimension
-                
+                tensorState = self._preprocessData(self.gameState)  # Convert to tensor and add batch dimension
 
                 #TODO Insert model prediction here.
                 # Perform the action

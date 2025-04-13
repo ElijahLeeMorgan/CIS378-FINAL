@@ -18,11 +18,11 @@ class GameInfo:
         self.dataSize = 10 + len(self.sickles) * 2  # 4 for the player position and velocity, 2 for max number of sickles (x,y)
 
     def __str__(self):
-        return (f"Player Alive?:\t\t{self.isAlive}\n"
-                f"Player Position:\t({self.playerX}, {self.playerY})\n"
-                f"Player Velocity:\t({self.playerVelocityX}, {self.playerVelocityY})\n"
-                f"Timer:\t\t\t{self.timer}\n"
-                f"Number of Sickles:\t{len(self.sickles)}\n")
+        return (f"Player Alive?:\t\t{self.isAlive,} {type(self.isAlive)}\n"
+                f"Player Position:\t({self.playerX}, {self.playerY}), {type(self.playerX)}\n"
+                f"Player Velocity:\t({self.playerVelocityX}, {self.playerVelocityY}, {type(self.playerVelocityX)})\n"
+                f"Timer:\t\t\t{self.timer}, {type(self.timer)}\n"
+                f"Number of Sickles:\t{len(self.sickles)}, {type(self.sickles)}\n")
 
     # Start AI Assisted Code
     def estimateVelocity(self, oldX, oldY, newX, newY) -> tuple[float, float]:
