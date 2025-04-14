@@ -8,15 +8,12 @@ def focus_window(window_title):
     try:
         if os.name == 'posix':  # Unix-like systems
             if os.uname().sysname == 'Darwin':  # macOS
-                # Use AppleScript to focus the window on macOS
-                script = f"""
-                tell application "System Events"
-                    set frontmost of the first process whose name is "{window_title}" to true
-                end tell
-                """
+                # Use AppleScript with System Events to focus the window by process name
+                # Hardcode love game engine on Mac
+                script = f'tell application "System Events" to set frontmost of process "love" to true'
                 result = os.system(f"osascript -e '{script}'")
                 if result != 0:
-                    raise Exception(f"No window found with title: {window_title}")
+                    raise Exception(f"No process found with title: love")
             else:  # Linux
                 # Use wmctrl to find and focus the window
                 result = os.popen(f"wmctrl -l | grep '{window_title}'").read()
