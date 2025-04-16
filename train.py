@@ -73,9 +73,8 @@ class Trainer():
     def _penalize(self) -> None:
         # Apply a penalty by adjusting the model's loss function
 
-        # Generate a dummy target tensor with zeros (penalty scenario)
-        target = torch.zeros(self.actionSize)
-        target = target.unsqueeze(0)  # Add batch dimension
+        # Generate a dummy target tensor with a higher penalty (increased penalty scenario)
+        target = torch.full((1, self.actionSize), -0.5)  # Increased penalty value
         
         # Get the current state and predict the action probabilities
         state = self._tensorData(self.gameState) #FIXME turn into a object var to save CPU cost.
@@ -90,7 +89,8 @@ class Trainer():
         loss.backward()
         self.optimizer.step()
 
-        print("Penalty applied.")
+        print("Increased penalty applied.")
+
 
     def _reward(self, reward: float) -> None:
         # Apply a reward by adjusting the model's loss function
@@ -178,7 +178,8 @@ class Trainer():
                 print(f"Action: {action}")
 
             print("Time alive:", currentTime, "Longest time alive:", longestTimeAlive)
-            timeAlive = currentTime # Time of death.
+            timeAlive = 30 - currentTime # Time of death. Fixed issue, was accidentlly rewarding model for lower time alive.
+            #NOTE Remember! The timer is going BACKWARDS, not forwards!
             if timeAlive > longestTimeAlive:
                 longestTimeAlive = timeAlive
                 print(f"Longest time alive: {longestTimeAlive} seconds")
