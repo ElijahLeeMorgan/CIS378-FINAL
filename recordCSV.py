@@ -29,9 +29,9 @@ def _createCSV(fileName:str="gameRecording") -> None|str:
     
     # Create the CSV file, write headers
     with open(fileName, 'w') as f:
-        headers = ["isAlive", "playerX", "playerY", "playerVelocityX", "playerVelocityY", "timer", "numSickles"]
-        sickle_headers = [f"sicklesX{i},sicklesY{i}" for i in range(9)] # sickles max: 9
-        all_headers = headers + sickle_headers
+        headers = ["isAlive", "playerX", "playerY", "playerVelocityX", "playerVelocityY", "timer"]
+        sickle_headers = [f"sicklesX{i},sicklesY{i}" for i in range(14)] #FIXME sickles max: 14..? That's weird, is my game recording class right?
+        all_headers = headers + sickle_headers + ["keyboardAction"]
         f.write(",".join(all_headers) + "\n")
     
     return fileName
@@ -87,7 +87,13 @@ def recordGameData(fileName:str="gameRecording") -> str:
     while _keyboardInput != -1.0: # ESC key pressed.
         # Get the current game state
         game_state = gameReader.getState()
-        # The time between these two calls is neglegable.
+
+        # Postpend 0's up to collumn 28(14 sickleXY) + 6(gamedata) + 1 (keyboardOutput) = 35 if the game_state is too short.
+        # Remember, the last value is removed before converting to a tensor.
+        # Keeps keyboard input at the end of the list, and ensure tensor size is consistent.
+        # Error checking will still occour in the supervised learning preprocessing just in case.
+        while (len(game_state) - 6) < 28: #FIXME Hardcoded, should make csv always have 35 collumns.
+            game_state.append(0.0)
         _keyboardInput = _currentKeyboardInput()  # Get the current keyboard input
         game_state.append(_keyboardInput)  # Append the current keyboard input as the float action conversion.
         

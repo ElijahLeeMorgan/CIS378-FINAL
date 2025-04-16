@@ -24,11 +24,12 @@ class SimpleNN(Module):
             ReLU(),
             Linear(128, 64),  # Hidden layer
             ReLU(),
-            Linear(64, output_size, bias=True),  # Output layer with actionSize neurons (4 actions)
+            Linear(64, output_size),  # Output layer with actionSize neurons (4 actions)
             Softmax(dim=-1)  # Softmax to normalize action probabilities.
             )
 
-    def forward(self, x:torch.Tensor):
+    def feedForward(self, x:torch.Tensor) -> torch.Tensor:
+        # Forward pass through the network. Take the max output for predicted action (by index).
         return self.model(x)
 
 # Example Data
@@ -41,7 +42,7 @@ class DataLoader:
     def _csvToNumpy(csv_file:str) -> tuple[np.matrix[float], np.vector[float]]:
         # Load CSV data
         # gameData-26floats, action-1float. In order by row.
-        data = np.genfromtxt(csv_file, delimiter=',', skip_header=1) #TODO Check if the CSV has a header. Porbably not.
+        data = np.genfromtxt(csv_file, delimiter=',', skip_header=1)
         # Split into game states and actions
         game_states = data[:, :-1]  # game states (all columns except the last)
         actions = data[:, -1]  # output actions (last column)
@@ -50,7 +51,7 @@ class DataLoader:
     def _preprocess_data(game_states:np.matrix[float], actions:np.vector[float]):
         # Normalize game states (if needed), convert to tensors.
         game_states = np.array(game_states, dtype=np.float32)
-        actions = np.array(actions, dtype=np.int64)  # Actions as integers
+        actions = np.array(actions, dtype=np.float32)  # Actions as floats
         return torch.tensor(game_states), torch.tensor(actions)
     
     def getdata(self, csv_file:str):
