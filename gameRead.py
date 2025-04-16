@@ -78,7 +78,7 @@ def listenForData(GINFO: GameInfo, ip:str="127.0.0.1", port:int=12345, buffer_si
             sickles=gameData['sickles']
         )
 
-        print(f"Received data from {addr}:\n{GINFO}")
+        #print(f"Received data from {addr}:\n{GINFO}")
 
         # Optionally save the data to a file
         if saveToFile:

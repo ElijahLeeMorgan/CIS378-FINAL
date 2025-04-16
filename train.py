@@ -159,7 +159,7 @@ class Trainer():
 
             while isAlive: # Player is Alive? Continue until False.
                 self.gameState = self.data.getState() # list[float]
-                currentTime = self.gameState[1]  # Current time
+                currentTime = self.gameState[5]  # Current time
                 isAlive = self.gameState[0]
 
                 print(f"Game state: {self.gameState}") # Print the game state for debugging
@@ -184,9 +184,9 @@ class Trainer():
                 print(f"Longest time alive: {longestTimeAlive} seconds")
                 # Save model.
                 self._saveModel()
-                #if timeAlive >= 30: #FIXME Gamestate is updating with values like 145 after 2 seconds.
-                #    print("Survived for 30 seconds, stopping training.")
-                #    break # If the player survives for 30 seconds, stop training.
+                if timeAlive >= 30: # Fixed issue, was accidentally pulling player X value not the timer value.
+                    print("Survived for 30 seconds, stopping training.")
+                    break # If the player survives for 30 seconds, stop training.
                 #NOTE do not 'contnue' here, we still need to reward the model for time alive.
 
             if timeAlive > lastTimeAlive:
