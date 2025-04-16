@@ -49,7 +49,7 @@ class GameInfo:
     def getState(self) -> list[float]:
         state = [float(self.isAlive), self.playerX, self.playerY, self.playerVelocityX, self.playerVelocityY, float(self.timer)]
         for sickle in self.sickles:
-            #NOTE These should alreayd be floats, but just in case.
+            #NOTE These should already be floats, but just in case.
             #if sickle['is_alive']: # Skips dead sickles. #FIXME isAlive not appended to data ahead of time. Not worh fixing right now.
             state.append(sickle['x'])
             state.append(sickle['y'])

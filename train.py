@@ -182,7 +182,7 @@ class Trainer():
                 
                 self.actions[action]() # Perform the action
                 print(f"Action: {action}")
-                time.sleep(0.1) 
+                time.sleep(0.05) # Saves CPU
 
             print("Time alive:", currentTime, "Longest time alive:", longestTimeAlive)
             timeAlive = 30 - currentTime # Time of death. Fixed issue, was accidentlly rewarding model for lower time alive.
