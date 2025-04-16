@@ -165,7 +165,7 @@ class Trainer():
                 print(f"Game state: {self.gameState}") # Print the game state for debugging
         
                 tensorState = self._tensorData(self.gameState)  # Convert to tensor and add batch dimension
-                print(f"State: {tensorState}") #FIXME: This is the last thing that will print. WHY?
+                #print(f"State: {tensorState}")
                 # Get the current state and predict the action probabilities
                 # Predict and perform the action
                 
@@ -174,9 +174,10 @@ class Trainer():
                 
                 action = self.model(tensorState).argmax().item()  # Get the action with the highest probability according to the model.
                 
-                self.actions[action]()  #FIXME No idea if this will work lol. It should run the returned function from the model.
+                self.actions[action]() # Perform the action
                 print(f"Action: {action}")
 
+            print("Time alive:", currentTime, "Longest time alive:", longestTimeAlive)
             timeAlive = currentTime # Time of death.
             if timeAlive > longestTimeAlive:
                 longestTimeAlive = timeAlive

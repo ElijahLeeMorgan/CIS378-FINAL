@@ -25,11 +25,14 @@ if __name__ == "__main__":
         # Start the game process with the full path
         game = Popen(["love", gamepath])
         print("Game process started. Waiting for it to load...")
+        sleep(3)  # Give the game a moment to start
         
-        # Wait for the game process to be ready
+        # Wait for the game process to be ready. #FIXME Needs works.
+        '''
         while game.poll() is None:
             print("Waiting for the game to load...")
             sleep(1)
+        '''
     else:
         print("Game file not found. Please run the build script in the ./game directory.")
         # I tried to use subprocess to run the build script, but the LOVE2D engine wasn't a fan.

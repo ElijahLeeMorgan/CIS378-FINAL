@@ -4,18 +4,18 @@ from os import path
 
 class GameInfo:
     def __init__(self):
-        self.isAlive = True
+        self.isAlive: bool = True
 
-        self.playerX = 0
-        self.playerY = 0
-        self.playerVelocityX = 0
-        self.playerVelocityY = 0
+        self.playerX: float = 0.0
+        self.playerY: float = 0.0
+        self.playerVelocityX: float = 0.0
+        self.playerVelocityY: float = 0.0
 
-        self.timer = 30
+        self.timer: int = 30
 
-        self.sickles = []           # list[dict[x:float,y:float, is_alive:bool]]
+        self.sickles: list[dict[float, float, bool]] = []           # list[dict[x:float,y:float, is_alive:bool]]
 
-        self.dataSize = 10 + len(self.sickles) * 2  # 4 for the player position and velocity, 2 for max number of sickles (x,y)
+        self.dataSize: int = 10 + len(self.sickles) * 2  # 4 for the player position and velocity, 2 for max number of sickles (x,y)
 
     def __str__(self):
         return (f"Player Alive?:\t\t{self.isAlive,} {type(self.isAlive)}\n"
@@ -43,7 +43,7 @@ class GameInfo:
 
         self.dataSize = 10 + len(self.sickles) * 2  # 4 for the player position and velocity, 2 for max number of sickles (x,y)
 
-        self.timer = timer
+        self.timer = timer #NOTE timer bug is not from the data retrieval.
         self.isAlive = is_alive
 
     def getState(self) -> list[float]:
@@ -61,7 +61,7 @@ def listenForData(GINFO: GameInfo, ip:str="127.0.0.1", port:int=12345, buffer_si
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((ip, port))
 
-    print(f"Listening for data on {ip}:{port}")
+    #print(f"Listening for data on {ip}:{port}")
 
     while True:
         # Receive data from the socket
@@ -78,7 +78,7 @@ def listenForData(GINFO: GameInfo, ip:str="127.0.0.1", port:int=12345, buffer_si
             sickles=gameData['sickles']
         )
 
-        #print(f"Received data from {addr}:\n{GINFO}")
+        print(f"Received data from {addr}:\n{GINFO}")
 
         # Optionally save the data to a file
         if saveToFile:
