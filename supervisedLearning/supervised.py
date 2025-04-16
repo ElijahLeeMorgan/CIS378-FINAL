@@ -5,7 +5,13 @@ from torch.nn import Module, Linear, ReLU, Softmax, Sequential
 import torch.optim as optim
 
 '''
+Notes:
+
 As per Bobeldyk's suggestion, we can use supervised learning to train our model, and use reinforment learning to fine-tune it.
+This will give our reinforcement learning model a good starting point, and save training time.
+
+The model will be a simple feedforward neural network, and subject to change. This doesn't matter as long as there's 26 input and 4 output neurons.
+In addion, there should be a softmax layer at the end to normalize the output.
 '''
 # AI Assisted Code
 class SimpleNN(Module):
