@@ -49,10 +49,10 @@ class GameInteraction:
         self.window_title = window_title
         focus_window(self.window_title)
 
-    def moveLeft(self, holdTime=0.25):
+    def moveLeft(self, holdTime=0.10):
         send_keystroke(self.window_title, 'left', holdTime)
     
-    def moveRight(self, holdTime=0.25):
+    def moveRight(self, holdTime=0.10):
         send_keystroke(self.window_title, 'right', holdTime)
     
     def jump(self, holdTime=0.10):

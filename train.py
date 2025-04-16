@@ -4,9 +4,10 @@ from gameRead import GameInfo
 from warnings import warn
 import numpy as np
 from os import path, makedirs
+import time
 
 import torch
-from torch.nn import Sequential, Linear, ReLU, Softmax
+from torch.nn import Sequential, Linear, ReLU, Softmax, Conv2d, Conv1d, AvgPool1d
 import torch.optim as optim
 
 # AI Assited Code
@@ -47,23 +48,30 @@ class Trainer():
 
         if model is None:
             print("Model is None, generating new model.")
-            self.model = Sequential(
-            Linear(26, 16), #FIXME Hardcoded input size. Should be self.stateSize <- Buggy, doesn't consider when sickles are missing. 
-            ReLU(),
-            Linear(16, 8),
-            ReLU(),
-            Linear(8, self.actionSize), # Currently 4 actions.
-            Softmax(dim=-1)
-            )
+            self._generateModel(epislon=0.5, epsilonDecay=0.999)  # Epsilon dictates randomness, to some extent.
         else:
             if not isinstance(model, torch.nn.Module):
                 raise TypeError("model must be an instance of torch.nn.Module")
             self.model = model
         
+        self.lossFunction = torch.nn.MSELoss() # Mean Squared Error Loss
         # Initialize the optimizer and learning rate scheduler
-        self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
-        self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=10, gamma=0.1) # Learning rate decay, optional but allows for better training.
+        self.optimizer = optim.Adam(self.model.parameters(), lr=0.3)
+        self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=10, gamma=0.90) # Adjusted step_size and gamma for slower learning rate decay.
 
+    def _generateModel(self, epislon:float, epsilonDecay:float) -> None:
+        # Generate a new model with the same architecture as the existing one
+        self.model = Sequential(
+            Linear(26, 128),  # Input layer with 26 features
+            ReLU(),
+            Linear(128, 64),  # Hidden layer
+            ReLU(),
+            Linear(64, self.actionSize, bias=True),  # Output layer with actionSize neurons (4 actions)
+            Softmax(dim=-1)  # Softmax to normalize action probabilities.
+            )
+        self.model.epsilon = epislon  # Epsilon for exploration
+        self.model.epsilonMin = 0.01
+        self.model.epsilonDecay = epsilonDecay  # Epsilon decay rate
 
     def _currentLearningRate(self) -> float:
         current_lr = self.optimizer.param_groups[0]['lr']
@@ -73,16 +81,15 @@ class Trainer():
     def _penalize(self) -> None:
         # Apply a penalty by adjusting the model's loss function
 
-        # Generate a dummy target tensor with a higher penalty (increased penalty scenario)
-        target = torch.full((1, self.actionSize), -0.5)  # Increased penalty value
+        # Generate a dummy target tensor with a uniform distribution (penalty scenario)
+        target = torch.full((1, self.actionSize), 1.0 / self.actionSize)  # Uniform distribution
         
         # Get the current state and predict the action probabilities
         state = self._tensorData(self.gameState) #FIXME turn into a object var to save CPU cost.
         predictions = self.model(state)
         
         # Calculate the loss (penalty)
-        loss_fn = torch.nn.MSELoss()
-        loss = loss_fn(predictions, target)
+        loss = self.lossFunction(predictions, target)
         
         # Backpropagate the penalty
         self.optimizer.zero_grad()
@@ -102,8 +109,7 @@ class Trainer():
         predictions = self.model(self._tensorData(self.gameState)) #FIXME turn into a object var to save CPU cost.
         
         # Calculate the loss (reward)
-        loss_fn = torch.nn.MSELoss()
-        loss = loss_fn(predictions, target)
+        loss = self.lossFunction(predictions, target)
         
         # Backpropagate the reward
         self.optimizer.zero_grad()
@@ -176,6 +182,7 @@ class Trainer():
                 
                 self.actions[action]() # Perform the action
                 print(f"Action: {action}")
+                time.sleep(0.1) 
 
             print("Time alive:", currentTime, "Longest time alive:", longestTimeAlive)
             timeAlive = 30 - currentTime # Time of death. Fixed issue, was accidentlly rewarding model for lower time alive.
