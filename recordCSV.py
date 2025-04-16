@@ -5,8 +5,18 @@ from time import sleep
 import gameRead
 import keyboard
 
-# AI Assisted Code
+'''
+Standalone script to record game data to a CSV file.
 
+- Must be run in the same directory as gameRead.py.
+- The game must be running in the background or you will receive an error.
+  - You can run the game via "love game/SickleDodge.love" in the terminal.
+
+Output CSV files are saved in the current directory, and are not postpended with 0's in empty cells.
+This was an oversight, but will be circumvented in the supervised learning preprocessing.
+'''
+
+# AI Assisted Code
 def _createCSV(fileName:str="gameRecording") -> None|str:
     # Create a CSV file with the current date and time
     current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -91,7 +101,7 @@ def recordGameData(fileName:str="gameRecording") -> str:
     print(f"Recording stopped. Data saved to {fileName}.")
     return fileName
 
-def main(gamepath:str='./game/SickleDodge.love'):
+def main(gamepath:str='./game/SickleDodge.love') -> None:
 
     # Check if the game is running
     if not os.path.exists(gamepath):
