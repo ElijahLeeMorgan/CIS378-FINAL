@@ -28,12 +28,7 @@ if __name__ == "__main__":
         print("Game process started. Waiting for it to load...")
         sleep(3)  # Give the game a moment to start
         
-        # Wait for the game process to be ready. #FIXME Needs works.
-        '''
-        while game.poll() is None:
-            print("Waiting for the game to load...")
-            sleep(1)
-        '''
+
     else:
         print("Game file not found. Please run the build script in the ./game directory.")
         # I tried to use subprocess to run the build script, but the LOVE2D engine wasn't a fan.
@@ -46,7 +41,7 @@ if __name__ == "__main__":
     print("Trainer object created. Training model...")
     if supervisedDemo:
         modelDemo = supervised.Demo(gameInteractor, gameReader, modelPath="./models/supervised/supervisedModel-134180.pth")
-        modelDemo.start(attempts=100)
+        modelDemo.start(attempts=5)
     else:
         modelTrainer = train.Trainer(gameInteractor, gameReader, model=None)
         modelTrainer.train(epochs=100)  # Train the model for 100 epochs

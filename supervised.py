@@ -192,7 +192,7 @@ class Demo:
     def __init__(self, interaction:interaction.GameInteraction, data:gameRead.GameInfo, modelPath:str=None) -> None:
         self.interaction = interaction
         self.data = data
-        self.model = SimpleNN(input_size=5, output_size=4)  # Initialize the model with the correct input and output sizes
+        self.model = SimpleNN(input_size=6, output_size=4)  # Initialize the model with the correct input and output sizes
         if modelPath:
             self.model.load_state_dict(torch.load(modelPath), strict=False)  # Load the state dictionary into the model
             self.model.eval()  # Set the model to evaluation mode
@@ -226,7 +226,8 @@ class Demo:
             isAlive = True # Player is alive?
 
             while isAlive: # Player is Alive? Continue until False.
-                self.gameState = self.data.getState()[1:6] #FIXME Hardcoded to 5 values for supervised model. 
+                self.gameState = self.data.getState()[0:6] #FIXME Hardcoded to 6 values for supervised model.
+                self.gameState[0], self.gameState[-2] = self.gameState[-2], self.gameState[0]  # Swap the first and second to last values
                 #See recordCSV for more details on broken data collection.
                 currentTime = self.gameState[5]  # Current time
                 isAlive = self.gameState[0]
@@ -243,8 +244,8 @@ class Demo:
                 prediction = self.model(tensor).argmax().item()
 
                 actions[prediction]() # Perform the action
-                print("Input Tensor: ", tensor) # Print the input tensor for debugging
-                print(f"UP, LEFT, RIGHT, NONE\nPrediction: {prediction}") # Print the action for debugging
+                #print("Input Tensor: ", tensor) # Print the input tensor for debugging
+                #print(f"UP, LEFT, RIGHT, NONE\nPrediction: {prediction}") # Print the action for debugging
                 time.sleep(0.05) # Saves CPU
 
             print("Time alive:", currentTime, "Longest time alive:", longestTimeAlive)
