@@ -220,8 +220,7 @@ class Trainer():
 
             
     def load_model(self, path: str):
-        # Placeholder for model loading logic
-        pass
+        self.model.load_state_dict(torch.load(path))
 
 if __name__ == "__main__":
     ...

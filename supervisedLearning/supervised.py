@@ -133,24 +133,32 @@ class Trainer:
 
                 # Debugging output
                 print("Target shape: ", target.shape)
+                print("Target data: ", target)
                 print("Predictions shape: ", predictions.shape)
+                print("Predictions data: ", predictions)
 
             self.optimizer.zero_grad()
             
             predictions = self.model(tensor)  # Forward pass
+            predictions = predictions.softmax(dim=-1)  # Apply softmax to get action probability. Also normalizes the output (because of the weird way I've done this).
             
             # This is almost certainly wrong, I probably have to max the correct index on a 4x1 (1x4..?) tensor. 
             # NOT make a tensor of the action.
-            #self.actions = {
-            #   0: self.interaction.jump,
-            #   1: self.interaction.moveLeft,
-            #   2: self.interaction.moveRight,
-            #   3: self.interaction.nothing,
-            #}
-            #
-            target = torch.tensor(self._actions[currentIndex], dtype=torch.float32).unsqueeze(0)  # Convert to tensor and match shape
+            targets = {
+               0.0: torch.tensor([1.0, 0.0, 0.0, 0.0], dtype=torch.float32),  # Move Up
+               1.0: torch.tensor([0.0, 1.0, 0.0, 0.0], dtype=torch.float32),  # Move Down
+               2.0: torch.tensor([0.0, 0.0, 1.0, 0.0], dtype=torch.float32),  # Move Left
+               3.0: torch.tensor([0.0, 0.0, 0.0, 1.0], dtype=torch.float32),  # Move Right
+            }
+
+            if self._actions[currentIndex] not in targets:
+                #NOTE Somehow the escape key got into the data. Wrote this as a precaution against further errors.
+                print(f"Action {self._actions[currentIndex]} not found in targets. Skipping...")
+                currentIndex += 1
+                continue
+            target = targets[self._actions[currentIndex]]  # Get the target action tensor
             
-            loss = self.loss_function(predictions, target)  # Compute loss
+            loss = self.loss_function(predictions, target)  # Compute loss, should decrease as the model learns
             loss.backward()  # Backpropagation
             
             self.optimizer.step()  # Update weights
@@ -169,7 +177,6 @@ class Trainer:
     def load_model(self, path:str="supervisedModel.pth"):
         self.model.load_state_dict(torch.load(path))
         print(f"Model loaded from {path}")
-
 
 class modelTester: #NOTE WIP. If I have more time I will implemnt real testing.
     def __init__(self, model:SimpleNN=None) -> None:
@@ -193,6 +200,7 @@ def main():
 
     test_input = torch.randn(1, 6)  # Example input
 
+    '''
     for model in [1000, 2000, 3000, 4000, 10000]:
         modelName = f"supervisedModel-{model}.pth"
         modelPath = f"../models/{modelName}"
@@ -204,6 +212,7 @@ def main():
     trainer.load_model("supervisedModelSmall.pth")
     output = trainer.model(test_input)
     print("Final model predicted action probabilities:", output)
+    '''
 
 if __name__ == "__main__":
     main()
