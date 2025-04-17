@@ -45,11 +45,8 @@ if __name__ == "__main__":
 
     print("Trainer object created. Training model...")
     if supervisedDemo:
-        modelDemo = supervised.Demo(gameInteractor, gameReader, modelPath="./models/supervisedModel-13418.pth")
-        modelDemo.start(attempts=3)
-
-        modelDemo2 = supervised.Demo(gameInteractor, gameReader, modelPath="./models/supervisedModel-1000.pth")
-        modelDemo2.start(attempts=3)
+        modelDemo = supervised.Demo(gameInteractor, gameReader, modelPath="./models/supervised/supervisedModel-134180.pth")
+        modelDemo.start(attempts=100)
     else:
         modelTrainer = train.Trainer(gameInteractor, gameReader, model=None)
         modelTrainer.train(epochs=100)  # Train the model for 100 epochs

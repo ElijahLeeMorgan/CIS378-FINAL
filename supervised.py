@@ -192,7 +192,7 @@ class Demo:
     def __init__(self, interaction:interaction.GameInteraction, data:gameRead.GameInfo, modelPath:str=None) -> None:
         self.interaction = interaction
         self.data = data
-        self.model = SimpleNN(input_size=6, output_size=4)  # Initialize the model with the correct input and output sizes
+        self.model = SimpleNN(input_size=5, output_size=4)  # Initialize the model with the correct input and output sizes
         if modelPath:
             self.model.load_state_dict(torch.load(modelPath), strict=False)  # Load the state dictionary into the model
             self.model.eval()  # Set the model to evaluation mode
@@ -226,7 +226,7 @@ class Demo:
             isAlive = True # Player is alive?
 
             while isAlive: # Player is Alive? Continue until False.
-                self.gameState = self.data.getState()[0:6] #FIXME Hardcoded to 5 values for supervised model. 
+                self.gameState = self.data.getState()[1:6] #FIXME Hardcoded to 5 values for supervised model. 
                 #See recordCSV for more details on broken data collection.
                 currentTime = self.gameState[5]  # Current time
                 isAlive = self.gameState[0]
@@ -259,10 +259,10 @@ class Demo:
             else:
                 print(f"Time alive: {timeAlive} seconds")
 
-def main():
+def main(path:str="./dataEngineering/100Attempts-corruptedSickles.csv"):
     # Example usage, set args for real use.
     smallModel = SimpleNN(input_size=6, output_size=4)  # Example model initialization, hardcoded input size due to weird data.
-    trainer = Trainer(dataPath="./dataEngineering/100Attempts-corruptedSickles.csv", model=smallModel)  # Example data path
+    trainer = Trainer(dataPath=path, model=smallModel)  # Example data path
     trainer.loadTrainingData(removeEmptyCollumn=True)
     trainer.train()
 
@@ -286,4 +286,5 @@ def main():
     '''
 
 if __name__ == "__main__":
-    main()
+    #main()
+    main("./dataEngineering/output_augmented_100_attempts.csv")
