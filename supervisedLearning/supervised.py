@@ -39,55 +39,63 @@ class DataLoader:
     def __init__(self):
         pass
 
-    def _csvToNumpy(csv_file:str) -> tuple[np.matrix[float], np.vector[float]]:
+    def _csvToNumpy(self, csv_file:str, removeEmptyCollumn:bool=False) -> tuple[np.matrix[float], np.matrix[float]]:
         # Load CSV data
         # gameData-26floats, action-1float. In order by row.
         data = np.genfromtxt(csv_file, delimiter=',', skip_header=1)
         # Split into game states and actions
+        if removeEmptyCollumn:
+            data = data[:, np.sum(data, axis=0) != 0]
+            print("Empty collumns removed new shape RxC: ", data.shape)
         game_states = data[:, :-1]  # game states (all columns except the last)
         actions = data[:, -1]  # output actions (last column)
         return game_states, actions
 
-    def _preprocess_data(game_states:np.matrix[float], actions:np.vector[float]):
+    def _preprocess_data(self, game_states:torch.tensor, actions:torch.tensor) -> tuple[torch.tensor, torch.tensor]:
         # Normalize game states (if needed), convert to tensors.
         game_states = np.array(game_states, dtype=np.float32)
         actions = np.array(actions, dtype=np.float32)  # Actions as floats
         return torch.tensor(game_states), torch.tensor(actions)
     
-    def getdata(self, csv_file:str):
+    def getdata(self, csv_file:str, removeEmptyCollumn:bool=False) -> tuple[torch.Tensor, torch.Tensor]:
         # Load data
-        game_states, actions = self._csvToNumpy(csv_file)
+        game_states, actions = self._csvToNumpy(csv_file, removeEmptyCollumn)
         # Preprocess data
         game_states, actions = self._preprocess_data(game_states, actions)
         return game_states, actions
 
 class Trainer:
-    def __init__(self, dataPath:str="../trainingData/gameData.csv", model:SimpleNN=None) -> None:
-        # Initialize model
-        if model is None:
-            self.model = SimpleNN(input_size=self._game_states.shape[1], output_size=4)
-        else:
-            self.model = model
+    def __init__(self, dataPath:str="../dataEngineering/100Attempts-corruptedSickles.csv", model:SimpleNN=None) -> None:
+        self.dataPath = dataPath
+        self._game_states = None
+        self._actions = None
+        self.numEpochs = 0  # Number of epochs for training
 
         # Set class _dataLoader object
         self._dataLoader = DataLoader()
-        self._game_states = None
-        self._actions = None
 
-        self.numEpochs = len(self._actions) # Number of recorded game states.
+        # Initialize model
+        if model is None:
+            self.model = SimpleNN(input_size=len(self._game_states), output_size=4) # Typically 26, but I messed up the sickleXY data while recording. May re-record if nesscessary.
+        else:
+            self.model = model
+
 
         # Define loss and optimizer
         self.loss_function = nn.CrossEntropyLoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
 
-    def loadTrainingData(self, dataPath:str="../trainingData/gameData.csv"):
-        self._game_states, self._actions = self._dataLoader.getdata(dataPath)
+    def loadTrainingData(self, removeEmptyCollumn:bool=False) -> tuple[torch.Tensor, torch.Tensor]:
+        self._game_states, self._actions = self._dataLoader.getdata(self.dataPath, removeEmptyCollumn)
+        if self._game_states is None or self._actions is None:
+            raise ValueError("Game states and actions must be loaded before training.")
 
     def train(self):
         # Load data
 
         
         # Training loop
+        self.numEpochs = len(self._actions) # Number of recorded game states.
         epochs = self.numEpochs # Number of CSV rows, aka number of recorded game states.
 
         for i in range(epochs):
@@ -114,3 +122,22 @@ class Trainer:
     def load_model(self, path:str="supervisedModel.pth"):
         self.model.load_state_dict(torch.load(path))
         print(f"Model loaded from {path}")
+
+
+def main():
+    # Example usage, set args for real use.
+    smallModel = SimpleNN(input_size=6, output_size=4)  # Example model initialization
+    trainer = Trainer(dataPath="../dataEngineering/100Attempts-corruptedSickles.csv", model=smallModel)  # Example data path
+    trainer.loadTrainingData(removeEmptyCollumn=True)
+    #trainer.train()
+
+    # Load the model for inference
+    #trainer.load_model("supervisedModel.pth")
+
+    # Example inference
+    #test_input = torch.randn(1, 6)  # Example input
+    #output = trainer.model(test_input)
+    #print("Predicted action probabilities:", output)
+
+if __name__ == "__main__":
+    main()
