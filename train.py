@@ -12,7 +12,7 @@ import torch.optim as optim
 
 # AI Assited Code
 class Trainer():
-    def __init__(self, interaction:GameInteraction=None, data:GameInfo=None, model:torch.nn.Module=None):
+    def __init__(self, interaction:GameInteraction=None, data:GameInfo=None, model:torch.nn.Module|str=None):
         # Error checking, allows for reusing objects when possible.
 
         # Window interaction Class
@@ -46,18 +46,29 @@ class Trainer():
         #NOTE If I do this I need to adjust functions that read the self.gameState variable. 
         self.gameState = self.data.getState()
 
-        if model is None:
+        self.model = model
+        if self.model is None:
             print("Model is None, generating new model.")
             self._generateModel(epislon=0.5, epsilonDecay=0.999)  # Epsilon dictates randomness, to some extent.
-        else:
-            if not isinstance(model, torch.nn.Module):
-                raise TypeError("model must be an instance of torch.nn.Module")
+        # I trust myself, wcgw? :) 
+        #if not isinstance(model, torch.nn.Module):
+        #    raise TypeError("model must be an instance of torch.nn.Module")
+        elif isinstance(self.model, str):
+            print(f"Loading model from {model}")
+            self.load_model(model)
+        elif isinstance(model, torch.nn.Module):
             self.model = model
+        else:
+            raise TypeError("model must be a filepath or an instance of torch.nn.Module")
         
         self.lossFunction = torch.nn.MSELoss() # Mean Squared Error Loss
         # Initialize the optimizer and learning rate scheduler
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.3)
         self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=10, gamma=0.90) # Adjusted step_size and gamma for slower learning rate decay.
+
+    def load_model(self, path:str="supervisedModel.pth"):
+        self.model.load_state_dict(torch.load(path))
+        print(f"Model loaded from {path}")
 
     def _generateModel(self, epislon:float, epsilonDecay:float) -> None:
         # Generate a new model with the same architecture as the existing one
@@ -119,7 +130,7 @@ class Trainer():
         print(f"Reward: {reward}")
 
     def _tensorData(self, data: list) -> torch.Tensor:
-        # Data is alreayd a list of floats, so we can just convert it to a tensor.
+        # Data is already a list of floats, so we can just convert it to a tensor.
         # I didn't realize this when I wrote the code below.
         '''
         for i in data:
@@ -148,7 +159,7 @@ class Trainer():
         for epoch in range(epochs): # Each epoch is one life in the game.
             print(f"Epoch {epoch + 1}/{epochs}")
 
-            sleep(3) # Give the game time to restart.
+            sleep(1) # Give the game time to restart.
             
             #for batch in train_loader: # Replace with real-time data fetching
             # Perform forward pass, compute loss, and backpropagation
@@ -219,8 +230,9 @@ class Trainer():
         print(f"Model saved to {filePath}.")
 
             
-    def load_model(self, path: str):
-        self.model.load_state_dict(torch.load(path))
+    def load_model(self, path: str) -> None: 
+        #FIXME: Load optimizer state as well.
+        self.model = torch.load_state_dict(torch.load(path), strict=False)
 
 if __name__ == "__main__":
     ...

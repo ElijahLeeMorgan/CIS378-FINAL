@@ -6,11 +6,12 @@ from time import sleep
 import gameRead
 import interaction
 import train
+import supervised
 
 if __name__ == "__main__":
     gameReader = gameRead.GameInfo()
     # Set model to a LOADED model if you have one to train/demo.
-    #TODO Make a model loader system flag to load a model from a file.
+    supervisedDemo = True
 
     gamepath = './game/SickleDodge.love'
 
@@ -41,9 +42,17 @@ if __name__ == "__main__":
     #NOTE It's very likely that the char will die before the game is ready. This should be fine.
     gameInteractor = interaction.GameInteraction("Sickle Dodge")
     print("Game interaction object created.")
-    modelTrainer = train.Trainer(gameInteractor, gameReader, model=None)
+
     print("Trainer object created. Training model...")
-    modelTrainer.train(epochs=100)  # Train the model for 100 epochs
+    if supervisedDemo:
+        modelDemo = supervised.Demo(gameInteractor, gameReader, modelPath="./models/supervisedModel-13418.pth")
+        modelDemo.start(attempts=3)
+
+        modelDemo2 = supervised.Demo(gameInteractor, gameReader, modelPath="./models/supervisedModel-1000.pth")
+        modelDemo2.start(attempts=3)
+    else:
+        modelTrainer = train.Trainer(gameInteractor, gameReader, model=None)
+        modelTrainer.train(epochs=100)  # Train the model for 100 epochs
 
     # Check if CUDA is available and set device accordingly
     #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

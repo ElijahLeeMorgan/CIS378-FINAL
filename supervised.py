@@ -4,6 +4,11 @@ import torch.nn as nn
 from torch.nn import Module, Linear, ReLU, Softmax, Sequential
 import torch.optim as optim
 
+# For demo, sadly I don't have time to re-write all of this.
+import interaction
+import gameRead
+import time
+
 '''
 Notes:
 
@@ -15,7 +20,7 @@ In addion, there should be a softmax layer at the end to normalize the output.
 '''
 # AI Assisted Code
 class SimpleNN(Module):
-    def __init__(self, input_size:int=26, output_size:int=4):
+    def __init__(self, input_size:int=6, output_size:int=4):
         super(SimpleNN, self).__init__()
         self.model = Sequential(
             Linear(input_size, 64),  # Input layer with 26 features
@@ -44,6 +49,10 @@ class SimpleNN(Module):
             probs = self.model(x)
             print("Predicted action probabilities:", probs)
             return probs
+    
+    def save_model(self, path:str="supervisedModel.pth"):
+        torch.save(self.model.state_dict(), path)
+        print(f"Model saved to {path}")
 
 # Example Data
 #game_states = [[1.0, 50.0, 100.0, 0.0, 0.0, 30.0, ...], [1.0, 60.0, 90.0, 0.0, 0.0, 29.0, ...]]
@@ -85,19 +94,20 @@ class DataLoader:
         return game_states, actions
 
 class Trainer:
-    def __init__(self, dataPath:str="../dataEngineering/100Attempts-corruptedSickles.csv", model:SimpleNN=None) -> None:
+    def __init__(self, dataPath:str="./dataEngineering/100Attempts-corruptedSickles.csv", model:SimpleNN=None) -> None:
         self.dataPath = dataPath
         self._game_states = None # tuple[tuple[torch.Tensor]
         self._actions = None     # np.ndarray[float]
+        self.model = model
 
         # Set class _dataLoader object
         self._dataLoader = DataLoader()
 
         # Initialize model
-        if model is None:
-            self.model = SimpleNN(input_size=len(self._game_states), output_size=4) # Typically 26, but I messed up the sickleXY data while recording. May re-record if nesscessary.
-        else:
-            self.model = model
+        if self.model is None:
+            #self.model = SimpleNN(input_size=len(self._game_states), output_size=len(self._actions)) 
+            # Typically 26, but I messed up the sickleXY data while recording. May re-record if nesscessary.
+            self.model = SimpleNN(input_size=6, output_size=4)  # Example model initialization, hardcoded input size due to weird data.
 
         # Define loss and optimizer
         self.loss_function = nn.MSELoss()  # Mean Squared Error loss for regression
@@ -129,7 +139,7 @@ class Trainer:
 
             if currentIndex % 1000 == 0 and currentIndex != 0:
                 print(f"Training on game state {currentIndex}/{len(self._game_states)}")
-                self.save_model(f"../models/supervisedModel-{currentIndex}.pth")  # Save the model every 1000 epochs
+                self.model.save_model(f"./models/supervisedModel-{currentIndex}.pth")  # Save the model every 1000 epochs
 
                 # Debugging output
                 print("Target shape: ", target.shape)
@@ -142,13 +152,11 @@ class Trainer:
             predictions = self.model(tensor)  # Forward pass
             predictions = predictions.softmax(dim=-1)  # Apply softmax to get action probability. Also normalizes the output (because of the weird way I've done this).
             
-            # This is almost certainly wrong, I probably have to max the correct index on a 4x1 (1x4..?) tensor. 
-            # NOT make a tensor of the action.
             targets = {
                0.0: torch.tensor([1.0, 0.0, 0.0, 0.0], dtype=torch.float32),  # Move Up
-               1.0: torch.tensor([0.0, 1.0, 0.0, 0.0], dtype=torch.float32),  # Move Down
-               2.0: torch.tensor([0.0, 0.0, 1.0, 0.0], dtype=torch.float32),  # Move Left
-               3.0: torch.tensor([0.0, 0.0, 0.0, 1.0], dtype=torch.float32),  # Move Right
+               1.0: torch.tensor([0.0, 1.0, 0.0, 0.0], dtype=torch.float32),  # Move Left
+               2.0: torch.tensor([0.0, 0.0, 1.0, 0.0], dtype=torch.float32),  # Move Right
+               3.0: torch.tensor([0.0, 0.0, 0.0, 1.0], dtype=torch.float32),  # Do Nothing
             }
 
             if self._actions[currentIndex] not in targets:
@@ -167,18 +175,10 @@ class Trainer:
         
         print("Training complete.")
         # Save the model
-        self.save_model(f"../models/supervisedModel-{currentIndex}.pth") 
+        self.model.save_model(f"./models/supervisedModel-{currentIndex}.pth") 
         print("Model saved.")
-        
-    def save_model(self, path:str="supervisedModel.pth"):
-        torch.save(self.model.state_dict(), path)
-        print(f"Model saved to {path}")
 
-    def load_model(self, path:str="supervisedModel.pth"):
-        self.model.load_state_dict(torch.load(path))
-        print(f"Model loaded from {path}")
-
-class modelTester: #NOTE WIP. If I have more time I will implemnt real testing.
+class ModelTester: #NOTE WIP. If I have more time I will implemnt real testing.
     def __init__(self, model:SimpleNN=None) -> None:
         self.model = model
 
@@ -188,22 +188,93 @@ class modelTester: #NOTE WIP. If I have more time I will implemnt real testing.
             raise ValueError("Model must be loaded before testing.")
         return self.model.predict(input)
 
+class Demo:
+    def __init__(self, interaction:interaction.GameInteraction, data:gameRead.GameInfo, modelPath:str=None) -> None:
+        self.interaction = interaction
+        self.data = data
+        self.model = SimpleNN(input_size=6, output_size=4)  # Initialize the model with the correct input and output sizes
+        if modelPath:
+            self.model.load_state_dict(torch.load(modelPath), strict=False)  # Load the state dictionary into the model
+            self.model.eval()  # Set the model to evaluation mode
+
+        # After doing some demos, it looked like we were suffering the same issues as the reinforcement learning model.
+        # Thankfully, this isn't the case. The model is actually working as intended, but needs way more training.
+            # Check if the internal parameters actually changed
+        #    for name, param in self.model.named_parameters():
+        #        print(f"Parameter {name}: {param.data}")
+
+    def start(self, attempts:int=10) -> None:
+        #NOTE: Yeah, yeah, yeah, repeated code anti-pattern, but the script was slop to begin with.
+        # I'm a lot more impressed with my supervised.py code, but hindsight is 20/20.
+
+        # Run the model for a given number of epochs, but doesn't train it.
+        # This is useful for testing the model's performance without updating its weights.
+        actions = {
+                    0: self.interaction.jump,  # Move Up
+                    1: self.interaction.moveLeft,  # Move Left
+                    2: self.interaction.moveRight,  # Move Right
+                    3: self.interaction.nothing,  # Do Nothing
+                }
+        timeAlive = 0
+        longestTimeAlive = 0
+
+        for a in range(attempts): # Each epoch is one life in the game.
+            print(f"Attempt #: {a + 1}/{attempts}")
+
+            time.sleep(1) # Give the game time to restart.
+            self.interaction.jump()  # Starts the game
+            isAlive = True # Player is alive?
+
+            while isAlive: # Player is Alive? Continue until False.
+                self.gameState = self.data.getState()[0:6] #FIXME Hardcoded to 5 values for supervised model. 
+                #See recordCSV for more details on broken data collection.
+                currentTime = self.gameState[5]  # Current time
+                isAlive = self.gameState[0]
+
+                #print(f"Game state: {self.gameState}") # Print the game state for debugging
+        
+                tensor = torch.tensor(self.gameState, dtype=torch.float32)  # Convert to tensor
+                # Get the current state and predict the action probabilities
+                # Predict and perform the action
+                '''
+                prediction = self.model(tensor)  # Forward pass
+                prediction = prediction.softmax(dim=-1)  # Apply softmax to get action probability. Also normalizes the output (because of the weird way I've done this).
+                '''
+                prediction = self.model(tensor).argmax().item()
+
+                actions[prediction]() # Perform the action
+                print("Input Tensor: ", tensor) # Print the input tensor for debugging
+                print(f"UP, LEFT, RIGHT, NONE\nPrediction: {prediction}") # Print the action for debugging
+                time.sleep(0.05) # Saves CPU
+
+            print("Time alive:", currentTime, "Longest time alive:", longestTimeAlive)
+            timeAlive = 30 - currentTime # Time of death.
+
+            if timeAlive > longestTimeAlive:
+                longestTimeAlive = timeAlive
+                print(f"Longest time alive: {longestTimeAlive} seconds")
+                if timeAlive >= 30: 
+                    print("Survived for 30 seconds, YAY!!!!!")
+                    break
+            else:
+                print(f"Time alive: {timeAlive} seconds")
 
 def main():
     # Example usage, set args for real use.
     smallModel = SimpleNN(input_size=6, output_size=4)  # Example model initialization, hardcoded input size due to weird data.
-    trainer = Trainer(dataPath="../dataEngineering/100Attempts-corruptedSickles.csv", model=smallModel)  # Example data path
+    trainer = Trainer(dataPath="./dataEngineering/100Attempts-corruptedSickles.csv", model=smallModel)  # Example data path
     trainer.loadTrainingData(removeEmptyCollumn=True)
     trainer.train()
 
-    trainer.save_model("supervisedModelSmall.pth")
+    '''
+    trainer.model.save_model("supervisedModelSmall.pth")
 
     test_input = torch.randn(1, 6)  # Example input
 
-    '''
+    
     for model in [1000, 2000, 3000, 4000, 10000]:
         modelName = f"supervisedModel-{model}.pth"
-        modelPath = f"../models/{modelName}"
+        modelPath = f"./models/{modelName}"
         trainer.load_model(modelPath)
         output = trainer.model(test_input)
         print(f"Predicted action probabilities with {modelName}:", output)
