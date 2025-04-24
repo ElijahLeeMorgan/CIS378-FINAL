@@ -1,6 +1,7 @@
 # Sickle Dodge Bot
 A Reinforcement learning environment to teach a model how to play a modified version of Sickle Dodge. The original game can be found here: https://github.com/sugarvoid/sickle-dodge
 
+![modelJump](./img/modelJump.png)
 
 ### Requirements
 - Newest version of the LOVE engine: https://love2d.org/#download
